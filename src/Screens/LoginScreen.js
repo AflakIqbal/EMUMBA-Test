@@ -67,7 +67,7 @@ function HomeScreen({navigation, route}) {
         alignContent: 'center',
         backgroundColor: 'white',
       }}>
-      {/* <TouchableOpacity
+      <TouchableOpacity
         style={{
           zIndex: 10,
           alignSelf: 'flex-end',
@@ -87,7 +87,7 @@ function HomeScreen({navigation, route}) {
           getLocation();
         }}>
         <Text style={localStyles.actionButtonTextStyle}>Where i AM?</Text>
-      </TouchableOpacity> */}
+      </TouchableOpacity>
       <MapView
         style={{
           width: '100%',
@@ -117,7 +117,7 @@ function HomeScreen({navigation, route}) {
               borderRadius: moderateScale(12),
               borderColor: PRIMARYCOLOR,
               backgroundColor: PRIMARYCOLOR,
-              marginBottom: moderateScale(15),
+              marginBottom: moderateScale(14),
             }}
             onPress={() => {
               getLocation();
