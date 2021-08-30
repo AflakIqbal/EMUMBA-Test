@@ -5,4 +5,4 @@ Steps to run the code
 2) npm install
 3) react-native run-android
 
-By default the application will gives the weather of your current location and it will change vase on city that user select.
+By default the application will gives the weather of your current location and it will change based on city that user select.
