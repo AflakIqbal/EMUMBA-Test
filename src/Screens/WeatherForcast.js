@@ -18,88 +18,48 @@ import Spinner from '../utils/Spinner';
 import SelectDropdown from 'react-native-select-dropdown';
 import {PRIMARYCOLOR, WHITETEXTCOLOR} from '../styles/colors';
 import styles from '../styles/styles';
-import moment from '../utils/moment';
-
-var axios = require('axios');
+import RNAndroidLocationEnabler from 'react-native-android-location-enabler';
+import GetLocation from 'react-native-get-location';
 import {
   verticalScale,
   scale,
   moderateScale,
   moderateVerticalScale,
 } from 'react-native-size-matters';
-
+var axios = require('axios');
 const City = require('../assests/pk-cities.json');
 
-function GetDates(startDate, daysToAdd) {
-  var aryDates = [];
-
-  for (var i = 0; i <= daysToAdd; i++) {
-    var currentDate = new Date();
-    currentDate.setDate(startDate.getDate() + i);
-    aryDates.push(
-      currentDate.getDate() +
-        '-' +
-        MonthAsString(currentDate.getMonth()) +
-        '-' +
-        currentDate.getFullYear(),
-    );
-  }
-
-  return aryDates;
-}
-
-function GetDays(startDate, daysToAdd) {
-  var aryDates = [];
-
-  for (var i = 0; i <= daysToAdd; i++) {
-    var currentDate = new Date();
-    currentDate.setDate(startDate.getDate() + i);
-    aryDates.push(DayAsString(currentDate.getDay()));
-  }
-
-  return aryDates;
-}
-
-function MonthAsString(monthIndex) {
-  var d = new Date();
-  var month = new Array();
-  month[0] = '01';
-  month[1] = '02';
-  month[2] = '03';
-  month[3] = '04';
-  month[4] = '05';
-  month[5] = '06';
-  month[6] = '07';
-  month[7] = '08';
-  month[8] = '09';
-  month[9] = '10';
-  month[10] = '11';
-  month[11] = '12';
-
-  return month[monthIndex];
-}
-
-function DayAsString(dayIndex) {
-  var weekdays = new Array(7);
-  weekdays[0] = 'Sunday';
-  weekdays[1] = 'Monday';
-  weekdays[2] = 'Tuesday';
-  weekdays[3] = 'Wednesday';
-  weekdays[4] = 'Thursday';
-  weekdays[5] = 'Friday';
-  weekdays[6] = 'Saturday';
-
-  return weekdays[dayIndex];
-}
-
 function HomeScreen({navigation}) {
-  const [count, setCount] = React.useState(0);
+  const [weekday, setWeekday] = React.useState([
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ]);
+  const [month, setMonth] = React.useState([
+    '01',
+    '02',
+    '03',
+    '04',
+    '05',
+    '06',
+    '07',
+    '08',
+    '09',
+    '10',
+    '11',
+    '12',
+  ]);
   const [city, setCity] = React.useState(0);
   const [weather, setWeather] = React.useState(0);
   const [days, setDays] = React.useState();
   const [dates, setDates] = React.useState();
   const [searchCity, setSearchCity] = React.useState();
-  const [itemID, setItemID] = React.useState(0);
+  const [Latitude, setLatitude] = React.useState();
+  const [Longitude, setLongitude] = React.useState();
   const [showLoader, setShowLoader] = React.useState(false);
   const [CHART, setChart] = React.useState([0, 0, 0, 0, 0, 0, 0]);
   const [cities, setCities] = React.useState(
@@ -107,7 +67,40 @@ function HomeScreen({navigation}) {
       return city['city'];
     }),
   );
+
+  function GetDays(startDate, daysToAdd) {
+    var aryDates = [];
+    for (var i = 0; i <= daysToAdd; i++) {
+      var currentDate = new Date();
+      currentDate.setDate(startDate.getDate() + i);
+      aryDates.push(weekday[currentDate.getDay()]);
+    }
+    return aryDates;
+  }
+
+  function GetDates(startDate, daysToAdd) {
+    var aryDates = [];
+    for (var i = 0; i <= daysToAdd; i++) {
+      var currentDate = new Date();
+      currentDate.setDate(startDate.getDate() + i);
+      aryDates.push(
+        currentDate.getDate() +
+          '-' +
+          month[currentDate.getMonth()] +
+          '-' +
+          currentDate.getFullYear(),
+      );
+    }
+    return aryDates;
+  }
+
   React.useEffect(() => {
+    setShowLoader(true);
+    RNAndroidLocationEnabler.promptForEnableLocationIfNeeded({
+      interval: 10000,
+      fastInterval: 5000,
+    });
+    getLocation();
     var startDate = new Date();
     var aryDates = GetDates(startDate, 7);
     var aryDays = GetDays(startDate, 7);
@@ -115,45 +108,50 @@ function HomeScreen({navigation}) {
     setDays(aryDays);
     setDates(aryDates);
   }, []);
+
   React.useEffect(() => {
     if (
       searchCity != null &&
       searchCity[0].lat != null &&
       searchCity[0].lng != null
     ) {
+      setLongitude(parseInt(searchCity[0].lng));
+      setLatitude(parseInt(searchCity[0].lat));
       AddTransaction(searchCity[0].lat, searchCity[0].lng);
     }
   }, [searchCity]);
 
   const MapScreen = () => {
-    if (
-      searchCity != null &&
-      searchCity[0].lat != null &&
-      searchCity[0].lng != null
-    ) {
-      let latitude = parseInt(searchCity[0].lat);
-      let longitude = parseInt(searchCity[0].lng);
+    if (Latitude != null && Longitude != null) {
       navigation.navigate('Map View', {
-        latitude: latitude,
-        longitude: longitude,
+        latitude: Latitude,
+        longitude: Longitude,
       });
     }
   };
 
+  const getLocation = () => {
+    GetLocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 15000,
+    })
+      .then(location => {
+        console.log(location);
+        setLatitude(location && location.latitude);
+        setLongitude(location && location.longitude);
+        let Longitude = location && location.longitude;
+        let Latitude = location && location.latitude;
+        AddTransaction(Latitude, Longitude);
+      })
+      .catch(error => {
+        const {code, message} = error;
+        console.warn(code, message);
+      });
+  };
+
   const DailyForcast = ({item, index}) => (
     <ImageBackground
-      style={{
-        alignItems: 'center',
-        backgroundColor: '#87CEEB',
-        borderRadius: 5,
-        height: verticalScale(200),
-        width: scale(120),
-        padding: 5,
-        marginLeft: 5,
-        marginRight: 5,
-        marginBottom: 10,
-        borderRadius: moderateScale(12),
-      }}
+      style={styles.imgBck}
       imageStyle={{
         borderRadius: moderateScale(12),
       }}
@@ -172,11 +170,11 @@ function HomeScreen({navigation}) {
           width: scale(60),
           borderRadius: moderateScale(12),
         }}
-        source={
-          item && item.weather && item.weather[0].main == 'rain'
-            ? require('../assests/images/rain.png')
-            : require('../assests/images/rainSun.png')
-        }
+        source={{
+          uri: `http://openweathermap.org/img/w/${
+            item && item.weather && item.weather[0].icon
+          }.png`,
+        }}
         resizeMode="stretch"
       />
       <View style={{flexDirection: 'row'}}>
@@ -242,6 +240,7 @@ function HomeScreen({navigation}) {
               return item.temp.day;
             }),
           );
+          setShowLoader(false);
         } else {
           console.log('result................', result);
         }
@@ -254,16 +253,15 @@ function HomeScreen({navigation}) {
   console.log(cities, 'cities');
 
   return (
-    <ScrollView>
+    <ScrollView style={{flex: 1, backgroundColor: WHITETEXTCOLOR}}>
       <SafeAreaView
         style={{
-          flex: 1,
           alignItems: 'center',
           alignContent: 'center',
-          backgroundColor: WHITETEXTCOLOR,
         }}>
         <Spinner showLoader={showLoader} spinnerText={''} />
         <SelectDropdown
+          dropdownIconPosition={'right'}
           defaultButtonText={'Select City'}
           buttonStyle={{
             height: 50,
@@ -276,12 +274,13 @@ function HomeScreen({navigation}) {
             marginTop: moderateVerticalScale(30),
           }}
           buttonTextStyle={{
-            fontSize: 13,
+            fontSize: 15,
             color: WHITETEXTCOLOR,
-            fontFamily: 'Montserrat-Medium',
+            fontFamily: 'Montserrat-Bold',
           }}
           data={cities}
           onSelect={(selectedItem, index) => {
+            setShowLoader(true);
             console.log(selectedItem, index);
             setSearchCity(
               City.filter(city => {
@@ -334,7 +333,6 @@ function HomeScreen({navigation}) {
               marginVertical: 8,
               borderRadius: 16,
               margin: 5,
-              backgroundColor: '#9c9c9c',
               height: moderateScale(220),
             }}
           />
@@ -397,6 +395,18 @@ const localStyles = StyleSheet.create({
     fontSize: moderateScale(13),
     color: WHITETEXTCOLOR,
     fontFamily: 'Montserrat-Medium',
+  },
+  imgBck: {
+    alignItems: 'center',
+    backgroundColor: '#87CEEB',
+    borderRadius: 5,
+    height: verticalScale(200),
+    width: scale(120),
+    padding: 5,
+    marginLeft: 5,
+    marginRight: 5,
+    marginBottom: 10,
+    borderRadius: moderateScale(12),
   },
 });
 

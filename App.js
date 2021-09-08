@@ -4,8 +4,8 @@ import * as React from 'react';
 import {View, Text, Image, Button} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import HomeScreen from './src/Screens/Home';
-import LoginScreen from './src/Screens/LoginScreen';
+import HomeScreen from './src/Screens/WeatherForcast';
+import LoginScreen from './src/Screens/MapScreen';
 const Stack = createNativeStackNavigator();
 import {PRIMARYCOLOR} from './src/styles/colors';
 
